@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Interview Agent</title>
+<style>
+:root {
+  --bg:      #07090f;
+  --surf:    #0d1117;
+  --surf2:   #161b22;
+  --border:  #21262d;
+  --accent:  #00e5a0;
+  --blue:    #58a6ff;
+  --warn:    #f85149;
+  --text:    #e6edf3;
+  --muted:   #484f58;
+  --muted2:  #8b949e;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;height:100dvh}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;flex-direction:column;overflow:hidden}
+
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surf);border-bottom:1px solid var(--border);flex-shrink:0}
+.logo{font-size:12px;font-weight:800;letter-spacing:.15em;color:var(--accent);text-transform:uppercase}
+#pill{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--border);color:var(--muted2);transition:all .25s}
+#pill.on{background:#0d2e25;color:var(--accent)}
+#pill.think{background:#0d1e35;color:var(--blue)}
+#pill.err{background:#2d1117;color:var(--warn)}
+
+/* SETUP */
+#setup{flex:1;overflow-y:auto;padding:20px 16px 30px;display:flex;flex-direction:column;gap:16px}
+.stitle{font-size:22px;font-weight:700;line-height:1.3}
+.stitle em{color:var(--accent);font-style:normal}
+.flabel{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:5px}
+input[type=password],textarea,select{width:100%;background:var(--surf2);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:13px;font-family:inherit;outline:none;-webkit-appearance:none;transition:border-color .2s}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{resize:none;height:160px;line-height:1.6;font-size:12px}
+select option{background:var(--surf2)}
+.go-btn{width:100%;padding:15px;background:var(--accent);color:#07090f;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.03em;transition:opacity .2s,transform .1s}
+.go-btn:active{opacity:.85;transform:scale(.98)}
+.note{font-size:11px;color:var(--muted);text-align:center;line-height:1.7}
+.note a{color:var(--blue);text-decoration:none}
+
+/* AGENT */
+#agent{flex:1;display:none;flex-direction:column;overflow:hidden}
+#qbar{padding:9px 16px;background:#0a0e18;border-bottom:1px solid var(--border);font-size:12px;color:var(--blue);min-height:34px;line-height:1.5;font-style:italic;flex-shrink:0;word-break:break-word}
+#abox{flex:1;overflow-y:auto;padding:18px 16px;font-size:15px;line-height:1.8;color:var(--text);word-break:break-word;-webkit-overflow-scrolling:touch}
+#abox::-webkit-scrollbar{width:2px}
+#abox::-webkit-scrollbar-thumb{background:var(--border)}
+.ph{color:var(--muted);font-size:13px;text-align:center;padding-top:40px;line-height:2}
+
+/* BOTTOM BAR */
+.bbar{flex-shrink:0;background:var(--surf);border-top:1px solid var(--border);padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.brow{display:flex;align-items:center;gap:10px}
+
+/* MIC BTN */
+.mic{width:54px;height:54px;border-radius:50%;border:2px solid var(--accent);background:transparent;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;transition:all .2s}
+.mic.on{background:var(--accent);border-color:var(--accent)}
+.mic.on::before{content:'';position:absolute;inset:-7px;border-radius:50%;border:2px solid var(--accent);animation:ring 1.1s ease-out infinite}
+@keyframes ring{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(1.55)}}
+.mic-info{flex:1;min-width:0}
+.mic-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mic-sub{font-size:10px;color:var(--muted2)}
+
+/* TYPE INPUT (iOS fallback) */
+#type-row{display:none;gap:8px}
+#type-input{flex:1;background:var(--surf2);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:13px;font-family:inherit;outline:none;-webkit-appearance:none}
+#type-input:focus{border-color:var(--accent)}
+.send-btn{padding:11px 16px;background:var(--accent);color:#07090f;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;flex-shrink:0}
+
+/* MODE CHIPS */
+.chips{display:flex;gap:6px}
+.chip{flex:1;padding:6px 4px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted2);font-size:10px;font-weight:700;cursor:pointer;text-align:center;transition:all .2s}
+.chip.on{border-color:var(--accent);color:var(--accent);background:#0d2e25}
+.clr-btn{padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted2);font-size:11px;cursor:pointer}
+.clr-btn:active{opacity:.6}
+
+/* CURSOR */
+.cur{display:inline-block;width:2px;height:.95em;background:var(--accent);margin-left:2px;vertical-align:text-bottom;animation:bl .75s step-end infinite}
+@keyframes bl{50%{opacity:0}}
+
+/* SETTINGS ICON */
+.cfg-btn{background:transparent;border:none;color:var(--muted2);font-size:18px;cursor:pointer;padding:2px 4px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⚡ Interview Agent</div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div id="pill">Setup</div>
+    <button class="cfg-btn" onclick="showSetup()" title="Settings">⚙️</button>
+  </div>
+</header>
+
+<!-- SETUP -->
+<div id="setup">
+  <div class="stitle">Your AI<br><em>Interview Copilot</em></div>
+
+  <div>
+    <div class="flabel">Anthropic API Key</div>
+    <input type="password" id="apikey" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false">
+  </div>
+
+  <div>
+    <div class="flabel">Your Profile — edit with your real details</div>
+    <textarea id="profile" spellcheck="false">Name: Khetraj Ram (KR)
+Role: Technical Lead Consultant — Oracle Hospitality / OPERA PMS
+Company: ITC Infotech India Limited, Noida
+Experience: 9+ years Oracle Hospitality; ~7 years at Oracle India (TSC III)
+Current: Sole SPOC for Marriott — all Oracle/OPERA technical matters
+
+Core Skills:
+- OPERA PMS 5.x, OXI, IFC8/HTNG interfaces
+- Oracle DB 10g–19c (DBA-level: patching, SYSAUX, tablespace mgmt)
+- WebLogic 12.2.1.4, OCI Foundations Associate, ITIL v4
+- VMware, Windows Server, SSL/Oracle Wallet, IFC8/HTNG Certified
+
+Key Wins:
+- CSAT elevated from 5/7 to 7/7, sustained 2+ years
+- Led Oracle 19c DB upgrade — zero critical production incidents
+- Resolved SYSAUX bloat crisis (31M+ advisor rows), OXI/SGI cert failures
+- Fixed WebLogic HTTPS cipher issue, MySQL 8.0→8.4 upgrade failure
+- Outstanding Performer of the Quarter award</textarea>
+  </div>
+
+  <div>
+    <div class="flabel">Answer Style</div>
+    <select id="style">
+      <option value="short" selected>Short & Fast — 3 to 4 lines, I'll elaborate</option>
+      <option value="detailed">Detailed — full answer</option>
+      <option value="bullets">Bullet Points — scannable</option>
+    </select>
+  </div>
+
+  <button class="go-btn" onclick="launch()">Start Agent →</button>
+
+  <div class="note">
+    Works on Android Chrome (voice) and iPhone (type).<br>
+    API key stored only in your browser session — never shared.<br>
+    <a href="https://console.anthropic.com/settings/keys" target="_blank">Get your API key →</a>
+  </div>
+</div>
+
+<!-- AGENT -->
+<div id="agent">
+  <div id="qbar">Tap mic or type the interview question...</div>
+  <div id="abox"><div class="ph">🎙️ Ready<br>Speak or type a question below</div></div>
+
+  <div class="bbar">
+    <!-- Voice row (Android) -->
+    <div class="brow" id="voice-row">
+      <button class="mic" id="micbtn" onclick="toggleMic()">🎙️</button>
+      <div class="mic-info">
+        <div class="mic-title" id="mic-title">Tap to listen</div>
+        <div class="mic-sub" id="mic-sub">Auto-detects when question ends</div>
+      </div>
+      <button class="clr-btn" onclick="clearAll()">Clear</button>
+    </div>
+    <!-- Type row (iOS fallback) -->
+    <div class="brow" id="type-row">
+      <input type="text" id="type-input" placeholder="Type question here..." enterkeyhint="send" onkeydown="if(event.key==='Enter')sendTyped()">
+      <button class="send-btn" onclick="sendTyped()">Send</button>
+    </div>
+    <!-- Mode chips -->
+    <div class="brow">
+      <div class="chips" id="chips">
+        <button class="chip on" id="chip-auto" onclick="setMode('auto')">🔁 Auto</button>
+        <button class="chip" id="chip-push" onclick="setMode('push')">✋ Push-to-talk</button>
+        <button class="chip" id="chip-type" onclick="setMode('type')">⌨️ Type</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE
+let apiKey='', profile='', style='short', mode='auto';
+let rec=null, listening=false, processing=false;
+let interim='', silTimer=null, t0=0;
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const hasVoice = ('webkitSpeechRecognition' in window)||('SpeechRecognition' in window);
+
+// ── LAUNCH
+function launch(){
+  apiKey = document.getElementById('apikey').value.trim();
+  profile= document.getElementById('profile').value.trim();
+  style  = document.getElementById('style').value;
+  if(!apiKey.startsWith('sk-ant')){alert('Enter a valid Anthropic API key');return;}
+  document.getElementById('setup').style.display='none';
+  const ag=document.getElementById('agent');
+  ag.style.display='flex';
+  ag.style.flexDirection='column';
+
+  if(isIOS||!hasVoice){
+    // iOS: hide mic, show type
+    document.getElementById('voice-row').style.display='none';
+    document.getElementById('type-row').style.display='flex';
+    document.getElementById('chip-auto').style.display='none';
+    document.getElementById('chip-push').style.display='none';
+    document.getElementById('chip-type').classList.add('on');
+    mode='type';
+    setPill('ready');
+  } else {
+    initRec();
+    if(mode==='auto') startRec();
+  }
+  wakeLock();
+}
+
+function showSetup(){
+  document.getElementById('agent').style.display='none';
+  document.getElementById('setup').style.display='flex';
+  document.getElementById('setup').style.flexDirection='column';
+  stopRec();
+}
+
+// ── SPEECH REC
+function initRec(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  rec=new SR();
+  rec.continuous=true; rec.interimResults=true; rec.lang='en-IN'; rec.maxAlternatives=1;
+
+  rec.onstart=()=>{
+    listening=true;
+    document.getElementById('micbtn').classList.add('on');
+    document.getElementById('mic-title').textContent='Listening...';
+    document.getElementById('mic-sub').textContent='Speak the interview question';
+    setPill('on');
+  };
+  rec.onend=()=>{
+    listening=false;
+    document.getElementById('micbtn').classList.remove('on');
+    if(!processing){
+      document.getElementById('mic-title').textContent='Tap to listen';
+      document.getElementById('mic-sub').textContent='Auto-detects when question ends';
+      setPill('ready');
+    }
+    if(mode==='auto'&&!processing) setTimeout(()=>{if(!listening&&!processing)startRec();},500);
+  };
+  rec.onerror=(e)=>{
+    if(e.error==='no-speech'||e.error==='aborted') return;
+    setPill('err'); listening=false;
+    document.getElementById('micbtn').classList.remove('on');
+    setTimeout(()=>{if(mode==='auto'&&!processing)startRec();},1500);
+  };
+  rec.onresult=(ev)=>{
+    let fin='',intr='';
+    for(let i=ev.resultIndex;i<ev.results.length;i++){
+      const t=ev.results[i][0].transcript;
+      ev.results[i].isFinal ? fin+=t : intr+=t;
+    }
+    if(fin){
+      interim+=' '+fin; interim=interim.trim();
+      setQ('🎤 '+interim);
+      clearTimeout(silTimer);
+      silTimer=setTimeout(()=>{
+        if(interim.length>5&&!processing){const q=interim;interim='';fire(q);}
+      },1800);
+    } else if(intr){
+      setQ('🎤 '+(interim+' '+intr).trim()+'...');
+    }
+  };
+}
+
+function startRec(){if(!rec||listening)return;interim='';try{rec.start();}catch(e){}}
+function stopRec(){if(!rec||!listening)return;clearTimeout(silTimer);try{rec.stop();}catch(e){}}
+
+function toggleMic(){
+  if(listening){
+    if(mode==='push'&&interim.length>5){const q=interim;interim='';stopRec();fire(q);}
+    else stopRec();
+  } else { startRec(); }
+}
+
+// ── TYPED INPUT (iOS)
+function sendTyped(){
+  const inp=document.getElementById('type-input');
+  const q=inp.value.trim();
+  if(!q||processing) return;
+  inp.value='';
+  setQ('❓ '+q);
+  fire(q);
+}
+
+// ── ANSWER
+async function fire(question){
+  if(processing) return;
+  processing=true; t0=Date.now();
+  stopRec();
+  setQ('❓ '+question);
+  setPill('think');
+  document.getElementById('mic-title').textContent='Answering...';
+  document.getElementById('mic-sub').textContent='';
+
+  const styleMap={
+    short: 'Answer in exactly 3–4 sentences maximum. Be direct. Lead with the answer, not the context. No preamble.',
+    detailed:'Give a thorough, structured answer with specific examples.',
+    bullets:'Answer in exactly 4 bullet points. One line each. No intro.'
+  };
+
+  const sys=`You answer interview questions on behalf of this candidate:\n\n${profile}\n\nRules:\n- ${styleMap[style]}\n- Never say "I would" — say "I have" or "I did"\n- Behavioral questions: STAR format, brief\n- Skip openers like "Great question", "Certainly", "Sure"\n- Sound confident and experienced, not rehearsed`;
+
+  const abox=document.getElementById('abox');
+  abox.innerHTML=''; let full='';
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:300,
+        stream:true,
+        system:sys,
+        messages:[{role:'user',content:question}]
+      })
+    });
+
+    if(!res.ok){const e=await res.json();throw new Error(e.error?.message||res.statusText);}
+
+    const reader=res.body.getReader(), dec=new TextDecoder();
+    let firstTok=true;
+
+    while(true){
+      const{done,value}=await reader.read();
+      if(done) break;
+      const lines=dec.decode(value,{stream:true}).split('\n');
+      for(const line of lines){
+        if(!line.startsWith('data: ')) continue;
+        const d=line.slice(6).trim();
+        if(d==='[DONE]') continue;
+        try{
+          const p=JSON.parse(d);
+          if(p.type==='content_block_delta'&&p.delta?.text){
+            if(firstTok){
+              const ms=Date.now()-t0;
+              setQ('❓ '+question+' · ⚡'+ms+'ms');
+              firstTok=false;
+            }
+            full+=p.delta.text;
+            abox.innerHTML=esc(full)+'<span class="cur"></span>';
+            abox.scrollTop=abox.scrollHeight;
+          }
+        }catch(_){}
+      }
+    }
+    abox.textContent=full;
+    const tot=Date.now()-t0;
+    setPill('ready');
+    document.getElementById('mic-title').textContent='Done · '+tot+'ms';
+    document.getElementById('mic-sub').textContent='Tap mic for next question';
+  }catch(err){
+    abox.textContent='Error: '+err.message;
+    setPill('err');
+    document.getElementById('mic-title').textContent='Error — tap to retry';
+  }finally{
+    processing=false;
+    if(mode==='auto'&&!isIOS&&hasVoice) setTimeout(()=>startRec(),2000);
+  }
+}
+
+// ── MODES
+function setMode(m){
+  mode=m;
+  ['auto','push','type'].forEach(x=>document.getElementById('chip-'+x).classList.toggle('on',x===m));
+  const typeRow=document.getElementById('type-row');
+  const voiceRow=document.getElementById('voice-row');
+  if(m==='type'){
+    typeRow.style.display='flex';
+    voiceRow.style.display='none';
+    stopRec();
+  } else {
+    typeRow.style.display='none';
+    voiceRow.style.display='flex';
+    if(m==='auto'&&!listening&&!processing) startRec();
+  }
+  document.getElementById('mic-sub').textContent=
+    m==='auto'?'Auto-detects when question ends':
+    m==='push'?'Tap again when done speaking':'';
+}
+
+// ── UI HELPERS
+function setPill(s){
+  const p=document.getElementById('pill');
+  p.className='';
+  if(s==='on'){p.className='on';p.textContent='● Listening';}
+  else if(s==='think'){p.className='think';p.textContent='⏳ Thinking';}
+  else if(s==='err'){p.className='err';p.textContent='✕ Error';}
+  else p.textContent='Ready';
+}
+function setQ(t){document.getElementById('qbar').textContent=t;}
+function clearAll(){
+  document.getElementById('abox').innerHTML='<div class="ph">🎙️ Ready<br>Speak or type a question below</div>';
+  setQ('Tap mic or type the interview question...');
+  interim=''; setPill('ready');
+  document.getElementById('mic-title').textContent='Tap to listen';
+  document.getElementById('mic-sub').textContent='Auto-detects when question ends';
+}
+function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ── WAKE LOCK
+async function wakeLock(){
+  try{if('wakeLock'in navigator)await navigator.wakeLock.request('screen');}catch(_){}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')wakeLock();});
+</script>
+</body>
+</html>
