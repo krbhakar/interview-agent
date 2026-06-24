@@ -1,8 +1,9 @@
 {
   "name": "InterviewAI — Real-time Interview Copilot",
   "short_name": "InterviewAI",
-  "description": "AI-powered real-time interview assistant. Get instant answers based on your resume.",
-  "start_url": "/",
+  "description": "AI-powered real-time interview assistant. Works with Groq, Claude, Gemini, OpenAI and more.",
+  "start_url": "/interview-agent/",
+  "scope": "/interview-agent/",
   "display": "standalone",
   "background_color": "#07090f",
   "theme_color": "#00e5a0",
